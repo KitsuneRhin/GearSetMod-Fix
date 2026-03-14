@@ -30,6 +30,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>E:\SteamLibrary\steamapps\common\Tainted Grail FoA\BepInEx\core\0Harmony.dll</HintPath>
@@ -74,6 +77,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Patch\ApplyRpgStatsPostfix.cs" />
+    <Compile Include="Patch\ApplyRpgStatsPrefix.cs" />
     <Compile Include="Patch\DisableRecalculate.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

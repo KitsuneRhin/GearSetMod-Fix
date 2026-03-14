@@ -7,17 +7,17 @@ using System;
 using System.Reflection;
 
 namespace GearSetFix.Patch
-{   // Redundant, logic handled by prefix patch; left in place for debugging and future-proofing in case of changes to original method
-    // [HarmonyPatch(typeof(GearSetsUI), "ApplyRpgStats", new Type[] { typeof(Hero), typeof(GearSet) })]
-    public static class ApplyRpgStatsPostfix
+{
+    [HarmonyPatch(typeof(GearSetsUI), "ApplyRpgStats", new Type[] { typeof(Hero), typeof(GearSet) })]
+    public static class ApplyRpgStatsPrefix
     {
-        static void Postfix(Hero hero, GearSet set)
+        static bool Prefix(Hero hero, GearSet set)
         {
-            Plugin.Log.LogInfo("Postfix entered for ApplyRpgStats");
+            Plugin.Log.LogInfo("Intercepting trigger for ApplyRpgStats\nPrefix entered");
 
-            if (hero == null) { Plugin.Log.LogWarning("Hero is null in postfix");	return; }
+                if (hero == null || set == null) { Plugin.Log.LogWarning("Hero or set is null, aborting prefix"); return false; }
             var heroRpg = hero.HeroRPGStats;
-            if (heroRpg == null) { Plugin.Log.LogWarning("HeroRPGStats is null in postfix"); return; }
+                if (heroRpg == null) { Plugin.Log.LogWarning("HeroRPGStats is null, aborting prefix"); return false; }
 
             foreach (var kv in set.RpgStats)
             {
@@ -28,17 +28,16 @@ namespace GearSetFix.Patch
                 {
                     Plugin.Log.LogInfo($"Processing stat {statName} => {desired}");
 
+                    // Reflection to get the stat object from HeroRPGStats
                     var prop = heroRpg.GetType().GetProperty(statName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    if (prop == null) { Plugin.Log.LogWarning($"Property {statName} not found on HeroRPGStats"); continue; }
-
+                        if (prop == null) { Plugin.Log.LogWarning($"Property {statName} not found on HeroRPGStats"); continue; }
                     var statObj = prop.GetValue(heroRpg);
-                    if (statObj == null) { Plugin.Log.LogWarning($"Stat object for {statName} was null"); continue; }
+                        if (statObj == null) { Plugin.Log.LogWarning($"Stat object for {statName} was null"); continue; }
 
                     // Type-path for native stat set: Stat.SetTo(float newValue, [bool runHooks], [ContractContext context])
                     if (statObj is Stat stat)
                     {
-                        // runHooks = false to avoid weird side effects; context = null
-                        stat.SetTo(desired, false, null);
+                        stat.SetTo(desired, false, null); // runHooks = false to avoid weird side effects; context = null
                         Plugin.Log.LogInfo($"Wrote {statName} via Stat.SetTo()");
                     }
                     else { Plugin.Log.LogWarning($"Stat object for {statName} is not a Stat (type={statObj.GetType().Name})"); }
@@ -46,7 +45,7 @@ namespace GearSetFix.Patch
                 catch (Exception ex) { Plugin.Log.LogError($"Unhandled exception while processing {statName}: {ex}"); }
             }
 
-            // Recalculation pipeline - DO NOT call HeroRPGStats.RecalculateAllStats(false) – it resets from wrapper and undoes changes
+            // Recalculation pipeline - DO NOT call HeroRPGStats.RecalculateAllStats() – it resets from wrapper and undoes changes
             try
             {
                 Plugin.Log.LogInfo("Triggering recalculation pipeline");
@@ -81,7 +80,8 @@ namespace GearSetFix.Patch
             }
             catch (Exception ex) { Plugin.Log.LogWarning($"Verification snapshot failed: {ex.Message}"); }
 
-            Plugin.Log.LogInfo("Postfix complete, exiting.");
+            Plugin.Log.LogInfo("Prefix complete, exiting.");
+            return false; // Skip original method
         }
     }
 }

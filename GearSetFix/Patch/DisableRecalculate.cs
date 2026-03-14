@@ -12,7 +12,7 @@ namespace GearSetFix.Patch
         static bool Prefix(Hero hero)
         {
             Plugin.Log.LogInfo("Intercepting trigger for RecalculateStats - skipping original method");
-            return false; // Prevent GearSetsUI.RecalculateStats method from running; postfix will run instead using game's internal recalculation
+            return false; // Prevent GearSetsUI.RecalculateStats method from running; prefix will run instead using game's internal recalculation
         }
     }
 }
